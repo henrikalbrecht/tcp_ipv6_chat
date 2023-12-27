@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>     // Benötigte Library für close()
 #include <sys/socket.h> // Benötigte Bibliothek für die socket() funktion 
 #include <sys/select.h> // Benötigte Bibliothek für die select() funktion
 #include <sys/time.h>
@@ -7,13 +8,22 @@
 #include <arpa/inet.h> //struct sockaddr_in
 #include <netinet/in.h>
 
+#define BUFFERSIZE 50
+
 int main (int argc, char* argv[]){
     
-    //Speciherung der Argumente in passende Variablen
+    if (argc != 4){
+        printf("Missing arguments\n You need to provide the following arguments: ipv6 adress, port, s_number");
+        return -1;
+    };
+    //Speicherung der Argumente in passende Variablen
     char server_ipv6[128];
     memcpy(server_ipv6,argv[1], strlen(argv[1])+1);
     int server_port         = atoi(argv[2]);
     int s_nummer            = atoi(argv[3]);
+
+    char sendbuf[BUFFERSIZE];
+
 
     //fd_set read_fds;    //deklariert das Lese Filedeskriptorset
     //fd_set write_fds;   //deklariert das Schreib Filedeskriptorset
@@ -37,20 +47,32 @@ int main (int argc, char* argv[]){
     server_addr.sin6_family          = AF_INET6;
     server_addr.sin6_port            = htons(server_port);
 
+    strcpy(sendbuf, "Hello Mr. Server!");
+    int sendlen = strlen(sendbuf);
+
     if(inet_pton(AF_INET6, server_ipv6,server_addr.sin6_addr.s6_addr) < 1){
         perror("inet_pton");
+        close(sockfd);
         return -1;
     } 
 
 
     if (connect(sockfd,(struct sockaddr*) &server_addr, sizeof(server_addr)) < 0){
         perror("connect");
+        close(sockfd);
         return -1;
     }
 
+    if (send(sockfd,sendbuf,sendlen,0) != sendlen){
+        perror("send");
+        close(sockfd);
+        return -1;
+    }
+
+close(sockfd);
+return 0;
 
     //Endlosschleife
-   while(1){       
 //
    // struct timeval timeout;
    // timeout.tv_sec = 5;  // Wartezeit in Sekunden
@@ -82,7 +104,6 @@ int main (int argc, char* argv[]){
 //
    // timeout.tv_sec = 5;  // Wartezeit in Sekunden
    // timeout.tv_usec = 0; // Zusätzliche Wartezeit in Mikrosekunden
-    };
 
 
 

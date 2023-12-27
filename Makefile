@@ -1,6 +1,6 @@
 SERVER = src/server.c
 CLIENT = src/client.c
-CFLAGS = -Wall
+CFLAGS = -Wall -fsanitize=address
 CC = gcc
 
 all: server client
